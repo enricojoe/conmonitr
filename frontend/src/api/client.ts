@@ -1,7 +1,25 @@
 import type { ContainerSummary, ContainerDetail, ImageSummary, VolumeSummary, NetworkSummary } from "../types";
 
+const TOKEN_KEY = "conmonitr_token";
+
+function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  const token = getToken();
+  const headers: Record<string, string> = {
+    ...(init?.headers as Record<string, string>),
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(url, { ...init, headers });
+
+  if (res.status === 401) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.href = "/login";
+    throw new Error("session expired");
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `request failed: ${res.status}`);
@@ -24,8 +42,11 @@ export const api = {
   listNetworks: () => req<NetworkSummary[]>("/api/networks"),
 };
 
-// Build a same-origin WebSocket URL (works through the Vite dev proxy).
+// Build a same-origin WebSocket URL with the JWT attached as ?token=
 export function wsUrl(path: string): string {
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  return `${proto}://${window.location.host}${path}`;
+  const token = getToken();
+  const sep = path.includes("?") ? "&" : "?";
+  const suffix = token ? `${sep}token=${token}` : "";
+  return `${proto}://${window.location.host}${path}${suffix}`;
 }

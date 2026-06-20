@@ -11,15 +11,19 @@ import (
 )
 
 func main() {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
-		os.Exit(1)
-	}
-
-	plain := strings.NewReplacer("+", "", "/", "", "=", "").Replace(base64.StdEncoding.EncodeToString(b))
-	if len(plain) > 40 {
-		plain = plain[:40]
+	var plain string
+	if len(os.Args) > 1 {
+		plain = os.Args[1]
+	} else {
+		b := make([]byte, 32)
+		if _, err := rand.Read(b); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		plain = strings.NewReplacer("+", "", "/", "", "=", "").Replace(base64.StdEncoding.EncodeToString(b))
+		if len(plain) > 40 {
+			plain = plain[:40]
+		}
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)

@@ -15,13 +15,19 @@ func NewRouter(h *Handler) *chi.Mux {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"*"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: false,
 	}))
 
-	r.Route("/api", func(r chi.Router) {
-		r.Get("/health", h.Health)
-		r.Route("/containers", func(r chi.Router) {
+	// Public
+	r.Post("/api/auth/login", h.Login)
+	r.Get("/api/health", h.Health)
+
+	// Protected — all /api and /ws routes require a valid JWT
+	r.Group(func(r chi.Router) {
+		r.Use(JWTAuth)
+
+		r.Route("/api/containers", func(r chi.Router) {
 			r.Get("/", h.ListContainers)
 			r.Get("/{id}", h.InspectContainer)
 			r.Post("/{id}/start", h.StartContainer)
@@ -29,15 +35,13 @@ func NewRouter(h *Handler) *chi.Mux {
 			r.Post("/{id}/restart", h.RestartContainer)
 			r.Delete("/{id}", h.RemoveContainer)
 		})
-		r.Get("/images", h.ListImages)
-		r.Get("/volumes", h.ListVolumes)
-		r.Get("/networks", h.ListNetworks)
-	})
+		r.Get("/api/images", h.ListImages)
+		r.Get("/api/volumes", h.ListVolumes)
+		r.Get("/api/networks", h.ListNetworks)
 
-	r.Route("/ws", func(r chi.Router) {
-		r.Get("/stats", h.WSStats)
-		r.Get("/stats/{id}", h.WSStatsOne)
-		r.Get("/logs/{id}", h.WSLogs)
+		r.Get("/ws/stats", h.WSStats)
+		r.Get("/ws/stats/{id}", h.WSStatsOne)
+		r.Get("/ws/logs/{id}", h.WSLogs)
 	})
 
 	return r

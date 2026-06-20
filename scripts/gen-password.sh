@@ -2,4 +2,4 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/../backend"
-go run ./cmd/gen-password
+go run ./cmd/gen-password "$@"
