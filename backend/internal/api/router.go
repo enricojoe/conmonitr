@@ -20,7 +20,8 @@ func NewRouter(h *Handler) *chi.Mux {
 	}))
 
 	// Public
-	r.Post("/api/auth/login", h.Login)
+	limiter := newLoginLimiter()
+	r.Post("/api/auth/login", limiter.middleware(h.Login))
 	r.Get("/api/health", h.Health)
 
 	// Protected — all /api and /ws routes require a valid JWT
