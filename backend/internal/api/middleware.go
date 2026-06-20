@@ -5,11 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 )
 
-// JWTAuth validates the Bearer token from the Authorization header.
+// JWTAuth validates the Bearer access token from the Authorization header.
 func JWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw := tokenFromRequest(r)
@@ -17,18 +16,10 @@ func JWTAuth(next http.Handler) http.Handler {
 			jsonError(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-
-		_, err := jwt.Parse(raw, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
-			}
-			return jwtSecret(), nil
-		})
-		if err != nil {
+		if _, err := parseToken(raw, "access"); err != nil {
 			jsonError(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
@@ -40,7 +31,7 @@ func tokenFromRequest(r *http.Request) string {
 	return ""
 }
 
-// wsAuthenticate reads the first WebSocket message as a JWT and validates it.
+// wsAuthenticate reads the first WebSocket message as an access JWT and validates it.
 // The client must send the token immediately after the connection is established.
 // Returns false and closes the connection if auth fails.
 func wsAuthenticate(conn *websocket.Conn) bool {
@@ -51,14 +42,7 @@ func wsAuthenticate(conn *websocket.Conn) bool {
 		conn.Close()
 		return false
 	}
-
-	_, err = jwt.Parse(string(msg), func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
-		}
-		return jwtSecret(), nil
-	})
-	if err != nil {
+	if _, err := parseToken(string(msg), "access"); err != nil {
 		conn.WriteMessage(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "unauthorized"))
 		conn.Close()

@@ -28,6 +28,8 @@ func NewRouter(h *Handler) *chi.Mux {
 	// Public
 	limiter := newLoginLimiter()
 	r.Post("/api/auth/login", limiter.middleware(h.Login))
+	r.Post("/api/auth/refresh", h.Refresh)
+	r.Post("/api/auth/logout", h.Logout)
 	r.Get("/api/health", h.Health)
 
 	// Protected REST routes — require Authorization: Bearer header

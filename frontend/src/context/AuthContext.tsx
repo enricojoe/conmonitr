@@ -1,19 +1,16 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { setToken, clearToken, getToken } from "../api/client";
 
 interface AuthState {
   token: string | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const TOKEN_KEY = "conmonitr_token";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem(TOKEN_KEY)
-  );
+  const [token, setTokenState] = useState<string | null>(() => getToken());
 
   async function login(username: string, password: string) {
     const res = await fetch("/api/auth/login", {
@@ -26,13 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(body.error || "login failed");
     }
     const data = await res.json();
-    localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
+    setTokenState(data.token);
   }
 
-  function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    clearToken();
+    setTokenState(null);
   }
 
   return (
