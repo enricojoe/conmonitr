@@ -38,6 +38,10 @@ func (h *Handler) WSStats(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	if !wsAuthenticate(conn) {
+		return
+	}
+
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	go readPump(conn, cancel)
@@ -114,6 +118,10 @@ func (h *Handler) WSStatsOne(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+
+	if !wsAuthenticate(conn) {
+		return
+	}
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()

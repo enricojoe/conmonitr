@@ -24,7 +24,7 @@ func NewRouter(h *Handler) *chi.Mux {
 	r.Post("/api/auth/login", limiter.middleware(h.Login))
 	r.Get("/api/health", h.Health)
 
-	// Protected — all /api and /ws routes require a valid JWT
+	// Protected REST routes — require Authorization: Bearer header
 	r.Group(func(r chi.Router) {
 		r.Use(JWTAuth)
 
@@ -39,11 +39,12 @@ func NewRouter(h *Handler) *chi.Mux {
 		r.Get("/api/images", h.ListImages)
 		r.Get("/api/volumes", h.ListVolumes)
 		r.Get("/api/networks", h.ListNetworks)
-
-		r.Get("/ws/stats", h.WSStats)
-		r.Get("/ws/stats/{id}", h.WSStatsOne)
-		r.Get("/ws/logs/{id}", h.WSLogs)
 	})
+
+	// WebSocket routes — auth via first message (token in URL would appear in logs)
+	r.Get("/ws/stats", h.WSStats)
+	r.Get("/ws/stats/{id}", h.WSStatsOne)
+	r.Get("/ws/logs/{id}", h.WSLogs)
 
 	return r
 }

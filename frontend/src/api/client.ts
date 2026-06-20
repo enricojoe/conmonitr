@@ -2,7 +2,7 @@ import type { ContainerSummary, ContainerDetail, ImageSummary, VolumeSummary, Ne
 
 const TOKEN_KEY = "conmonitr_token";
 
-function getToken(): string | null {
+export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
@@ -42,11 +42,8 @@ export const api = {
   listNetworks: () => req<NetworkSummary[]>("/api/networks"),
 };
 
-// Build a same-origin WebSocket URL with the JWT attached as ?token=
+// Build a same-origin WebSocket URL. Auth is done via the first message, not the URL.
 export function wsUrl(path: string): string {
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  const token = getToken();
-  const sep = path.includes("?") ? "&" : "?";
-  const suffix = token ? `${sep}token=${token}` : "";
-  return `${proto}://${window.location.host}${path}${suffix}`;
+  return `${proto}://${window.location.host}${path}`;
 }

@@ -23,6 +23,10 @@ func (h *Handler) WSLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	if !wsAuthenticate(conn) {
+		return
+	}
+
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	go readPump(conn, cancel)

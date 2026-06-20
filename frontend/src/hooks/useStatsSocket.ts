@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { wsUrl } from "../api/client";
+import { wsUrl, getToken } from "../api/client";
 import type { Metric } from "../types";
 
 const MAX_POINTS = 60;
@@ -18,7 +18,10 @@ export function useAggregateStats() {
 
     const connect = () => {
       ws = new WebSocket(wsUrl("/ws/stats"));
-      ws.onopen = () => setConnected(true);
+      ws.onopen = () => {
+        ws!.send(getToken() ?? "");
+        setConnected(true);
+      };
       ws.onclose = () => {
         setConnected(false);
         if (!closed) retry = setTimeout(connect, 2000);
@@ -65,6 +68,7 @@ export function useContainerStats(id: string) {
 
     const connect = () => {
       ws = new WebSocket(wsUrl(`/ws/stats/${id}`));
+      ws.onopen = () => ws!.send(getToken() ?? "");
       ws.onclose = () => {
         if (!closed) retry = setTimeout(connect, 2000);
       };

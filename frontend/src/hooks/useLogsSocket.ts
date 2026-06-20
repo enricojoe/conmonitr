@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { wsUrl } from "../api/client";
+import { wsUrl, getToken } from "../api/client";
 import type { LogLine } from "../types";
 
 const MAX_LINES = 500;
@@ -17,6 +17,7 @@ export function useLogsSocket(id: string) {
 
     const connect = () => {
       ws = new WebSocket(wsUrl(`/ws/logs/${id}?tail=200`));
+      ws.onopen = () => ws!.send(getToken() ?? "");
       ws.onclose = () => {
         if (!closed) retry = setTimeout(connect, 2000);
       };
