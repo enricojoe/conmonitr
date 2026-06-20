@@ -1,0 +1,19 @@
+# Node
+node_modules/
+frontend/dist/
+*.log
+
+# Go
+backend/conmonitr-backend
+*.test
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Env files (keep .env.example files tracked)
+.env
+backend/.env
+frontend/.env
+!*.env.example
